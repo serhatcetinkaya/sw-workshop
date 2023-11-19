@@ -21,7 +21,7 @@ type searcher struct {
 
 func (s *searcher) Search(_ context.Context, query string) ([]string, error) {
 	normalizedQuery := strings.Fields(strings.ToLower(query))
-	var results []string
+	results := []string{}
 	for emoji, labels := range emojis {
 		contains := true
 		for _, query := range normalizedQuery {
