@@ -17,15 +17,21 @@ type Searcher interface {
 // implementation of the searcher component
 type searcher struct {
 	weaver.Implements[Searcher]
+	cache weaver.Ref[Cache]
 }
 
-func (s *searcher) Search(_ context.Context, query string) ([]string, error) {
+func (s *searcher) Search(ctx context.Context, query string) ([]string, error) {
+	res, _ := s.cache.Get().Get(ctx, query)
+	if res != nil {
+		return res, nil
+	}
+
 	normalizedQuery := strings.Fields(strings.ToLower(query))
 	results := []string{}
 	for emoji, labels := range emojis {
 		contains := true
-		for _, query := range normalizedQuery {
-			if !slices.Contains(labels, query) {
+		for _, q := range normalizedQuery {
+			if !slices.Contains(labels, q) {
 				contains = false
 				break
 			}
@@ -35,5 +41,6 @@ func (s *searcher) Search(_ context.Context, query string) ([]string, error) {
 		}
 	}
 	sort.Strings(results)
+	_ = s.cache.Get().Put(ctx, query, results)
 	return results, nil
 }
