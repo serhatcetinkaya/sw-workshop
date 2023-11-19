@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"slices"
+	"sort"
 	"strings"
 
 	"github.com/ServiceWeaver/weaver"
@@ -33,5 +34,6 @@ func (s *searcher) Search(_ context.Context, query string) ([]string, error) {
 			results = append(results, emoji)
 		}
 	}
+	sort.Strings(results)
 	return results, nil
 }
