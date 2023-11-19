@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 
 	"github.com/ServiceWeaver/weaver"
 )
@@ -19,15 +21,26 @@ func main() {
 type app struct {
 	weaver.Implements[weaver.Main]
 	searcher weaver.Ref[Searcher]
+	listener weaver.Listener `weaver:"emojis"`
 }
 
 // serve is called by weaver.Run and contains the body of the application.
 func serve(ctx context.Context, a *app) error {
-	fmt.Println("Hello, World!")
-	emojis, err := a.searcher.Get().Search(ctx, "pig")
-	if err != nil {
-		return err
-	}
-	fmt.Println(emojis)
-	return nil
+	fmt.Printf("the app is listening: %s", a.listener)
+
+	http.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
+		query := r.URL.Query().Get("q")
+		emojis, err := a.searcher.Get().Search(ctx, query)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		bytes, err := json.Marshal(emojis)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		fmt.Fprintln(w, string(bytes))
+	})
+	return http.Serve(a.listener, nil)
 }
